@@ -1,0 +1,67 @@
+const
+    walk = require('walk'),
+    fs = require('fs'),
+    opencc = require('opencc');
+
+
+const 
+    dir = process.argv[2],
+    ccMode = process.argv[3];
+
+if(!dir) {
+    console.log('Please provide dir name in second args');
+    process.exit(0);
+}
+if(!ccMode){
+    console.log('Please provide OpenCC json name without .json in second args');
+    process.exit(0);
+}
+
+console.log(`Walking in directory '${dir}'`)
+run(dir, ccMode);
+
+
+function run(dir, ccMode){
+
+    // Init
+    let options = {
+        followLinks: false
+        // directories with these keys will be skipped
+      , filters: ['node_modules', 'assets', '.git']
+    };
+
+    let walker = walk.walk(dir, options);
+    let cc = new opencc(`${ccMode}.json`)
+
+    // Set callback
+    walker.on("directories", function (root, dirStatsArray, next) {
+        // dirStatsArray is an array of `stat` objects with the additional attributes
+        // * type
+        // * error
+        // * name
+        next();
+    });
+
+    walker.on("file", function (root, fileStats, next) {
+
+        console.log(`${root}/${fileStats.name}`);
+        let content = fs.readFileSync(`${root}/${fileStats.name}`, 'utf-8');
+        //console.log(content);
+
+        let converted = cc.convertSync(content);
+        //console.log(converted);
+        
+        fs.writeFileSync(`${root}/${fileStats.name}`, converted)
+
+        next();
+    });
+
+    walker.on("errors", function (root, nodeStatsArray, next) {
+        next();
+    });
+
+    walker.on("end", function () {
+        console.log("Walking is done");
+    });
+
+}
