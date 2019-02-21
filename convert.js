@@ -5,9 +5,14 @@ const
 
 
 const 
+    skippedDirs = require('./skipped.json'),
     dir = process.argv[2],
     ccMode = process.argv[3];
 
+if(!skippedDirs){
+    console.log('Please provide skipped.json in current directory');
+    process.exit(0);
+}
 if(!dir) {
     console.log('Please provide dir name in second args');
     process.exit(0);
@@ -18,16 +23,16 @@ if(!ccMode){
 }
 
 console.log(`Walking in directory '${dir}'`)
-run(dir, ccMode);
+run(dir, ccMode, skippedDirs);
 
 
-function run(dir, ccMode){
+function run(dir, ccMode, skippedDirs){
 
     // Init
     let options = {
         followLinks: false
         // directories with these keys will be skipped
-      , filters: ['node_modules', 'assets', '.git']
+      , filters: skippedDirs
     };
 
     let walker = walk.walk(dir, options);
